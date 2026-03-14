@@ -54,6 +54,17 @@ Output: figures/fig_01_hh_action_potential.png ... fig_11_summary_dashboard.png
 
   Hodgkin & Huxley (1952)  J Physiol 117:500
   Brette & Gerstner (2005) J Neurophysiol 94:3637   [AdEx]
+
+  ## Author
+
+**Om Jha**  
+B.Sc. Physics, St. Xavier’s College Kathmandu  
+Research interests: Biophysics, Nanomedicine, Computational Physics
+
+## License
+
+This repository is released under the MIT License.
+
   Naud et al. (2008)       Biol Cybern 99:335        [AdEx presets]
   Destexhe et al. (1994)   J Comput Neurosci 1:195   [Synapses]
   Jahr & Stevens (1990)    J Neurosci 10:3178        [NMDA Mg block]
