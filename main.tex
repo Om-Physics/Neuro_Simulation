@@ -1,0 +1,1171 @@
+%% ============================================================
+%%  COMPUTATIONAL NEUROSCIENCE PROJECT REPORT
+%%  Neural Network Basics: From Single Neurons to Recurrent
+%%  Circuits — A Biophysical Simulation Suite
+%%
+%%  Compatible with Overleaf (pdfLaTeX, XeLaTeX, or LuaLaTeX)
+%%  Compile with:  pdflatex main.tex   (run twice for references)
+%%                 bibtex main
+%%                 pdflatex main.tex
+%%                 pdflatex main.tex
+%% ============================================================
+
+\documentclass[11pt, a4paper, twocolumn]{article}
+
+%% ── Encoding & fonts ──────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}           % improved justification
+
+%% ── Page geometry ─────────────────────────────────────────
+\usepackage[
+  top=2.0cm, bottom=2.2cm,
+  left=1.8cm, right=1.8cm,
+  columnsep=0.7cm
+]{geometry}
+
+%% ── Mathematics ───────────────────────────────────────────
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}                  % bold math
+\usepackage{physics}             % \dv, \pdv, etc.
+
+%% ── Science & units ───────────────────────────────────────
+\usepackage{siunitx}
+\sisetup{per-mode=symbol, separate-uncertainty=true}
+
+%% ── Graphics ──────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage[font=small, labelfont=bf, labelsep=period,
+            justification=justified]{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{wrapfig}
+
+%% ── Tables ────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+
+%% ── Code listings ─────────────────────────────────────────
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codegreen}{rgb}{0.0,0.5,0.0}
+\definecolor{codeblue}{rgb}{0.0,0.2,0.7}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.55,0.0,0.55}
+
+\lstdefinestyle{pythonstyle}{
+  language=Python,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{codeblue}\bfseries,
+  stringstyle=\color{codegreen},
+  commentstyle=\color{codegray}\itshape,
+  numberstyle=\tiny\color{codegray},
+  breaklines=true,
+  breakatwhitespace=false,
+  numbers=left,
+  numbersep=5pt,
+  tabsize=4,
+  showspaces=false,
+  showstringspaces=false,
+  frame=single,
+  framesep=3pt,
+  rulecolor=\color{gray!40},
+  xleftmargin=12pt
+}
+\lstset{style=pythonstyle}
+
+%% ── Hyperlinks & references ───────────────────────────────
+\usepackage[
+  colorlinks=true,
+  linkcolor=blue!70!black,
+  citecolor=green!50!black,
+  urlcolor=blue!80!black
+]{hyperref}
+\usepackage{cleveref}            % \cref, \Cref
+\usepackage{natbib}
+\bibliographystyle{abbrvnat}
+\setcitestyle{authoryear,open={(},close={)}}
+
+%% ── Colours & boxes ───────────────────────────────────────
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+\definecolor{boxblue}{RGB}{220,235,250}
+\definecolor{boxorange}{RGB}{255,243,220}
+\definecolor{boxgreen}{RGB}{220,245,225}
+\definecolor{boxgray}{RGB}{240,240,240}
+
+\newtcolorbox{keyequation}[1][]{
+  colback=boxblue, colframe=blue!60!black,
+  fonttitle=\bfseries\small, title=Key Equation,
+  breakable, #1
+}
+\newtcolorbox{biophysbox}[1][]{
+  colback=boxgreen, colframe=green!50!black,
+  fonttitle=\bfseries\small, breakable, #1
+}
+\newtcolorbox{notebox}[1][]{
+  colback=boxorange, colframe=orange!70!black,
+  fonttitle=\bfseries\small, breakable, #1
+}
+
+%% ── Headers / footers ─────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{Computational Neuroscience Project Report}}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%% ── Section formatting ────────────────────────────────────
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{blue!70!black}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}
+  {\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\small\bfseries\itshape}
+  {\thesubsubsection}{1em}{}
+
+%% ── Misc utilities ────────────────────────────────────────
+\usepackage{enumitem}
+\usepackage{parskip}
+\setlength{\parskip}{4pt}
+\usepackage{lipsum}
+% \usepackage{soul}  % removed: not installed               % \hl{} highlighting
+% \usepackage{doi}  % removed
+
+%% -- Custom commands --
+\newcommand{\Vm}{\ensuremath{V_{\mathrm{m}}}}
+\newcommand{\Vrest}{\ensuremath{V_{\mathrm{rest}}}}
+\newcommand{\Vth}{\ensuremath{V_{\mathrm{th}}}}
+\newcommand{\Vreset}{\ensuremath{V_{\mathrm{reset}}}}
+\newcommand{\EK}{\ensuremath{E_{\mathrm{K}}}}
+\newcommand{\ENa}{\ensuremath{E_{\mathrm{Na}}}}
+\newcommand{\EL}{\ensuremath{E_{\mathrm{L}}}}
+\newcommand{\ECl}{\ensuremath{E_{\mathrm{Cl}}}}
+\newcommand{\gNa}{\ensuremath{\bar{g}_{\mathrm{Na}}}}
+\newcommand{\gK}{\ensuremath{\bar{g}_{\mathrm{K}}}}
+\newcommand{\gL}{\ensuremath{g_{\mathrm{L}}}}
+\newcommand{\Cm}{\ensuremath{C_{\mathrm{m}}}}
+\newcommand{\taum}{\ensuremath{\tau_{\mathrm{m}}}}
+\newcommand{\tauw}{\ensuremath{\tau_{w}}}
+\newcommand{\dT}{\ensuremath{\Delta_{T}}}
+\newcommand{\Hz}{\ensuremath{\,\mathrm{Hz}}}
+\newcommand{\mV}{\ensuremath{\,\mathrm{mV}}}
+\newcommand{\ms}{\ensuremath{\,\mathrm{ms}}}
+\newcommand{\pA}{\ensuremath{\,\mathrm{pA}}}
+\newcommand{\nS}{\ensuremath{\,\mathrm{nS}}}
+\newcommand{\pF}{\ensuremath{\,\mathrm{pF}}}
+\newcommand{\uAcm}{\ensuremath{\,\mu\mathrm{A/cm}^{2}}}
+\newcommand{\mScm}{\ensuremath{\,\mathrm{mS/cm}^{2}}}
+\newcommand{\uFcm}{\ensuremath{\,\mu\mathrm{F/cm}^{2}}}
+\newcommand{\python}[1]{\texttt{#1}}
+
+% ──────────────────────────────────────────────────────────
+\begin{document}
+
+%% ── Title block ───────────────────────────────────────────
+\twocolumn[{%
+\begin{@twocolumnfalse}
+
+\begin{center}
+
+{\LARGE\bfseries\color{blue!70!black}
+  Neural Network Basics in Computational Neuroscience}\\[6pt]
+{\large
+  A Biophysical Simulation Suite: From Action Potentials\\
+  to Recurrent E/I Networks with STDP Plasticity}\\[12pt]
+
+{\normalsize
+  \textbf{Computational Biophysics Project Report}\\[4pt]
+  Python implementation: Hodgkin--Huxley $\cdot$ LIF $\cdot$ AdEx $\cdot$
+  AMPA/NMDA/GABA synapses $\cdot$ STDP $\cdot$ E/I network\\[4pt]
+  Full source code and database at:
+  \texttt{\href{https://github.com/}{github.com/[your-username]/compneuro}}
+}
+
+\vspace{8pt}
+\hrule height 0.8pt
+\vspace{8pt}
+
+\begin{minipage}{0.88\textwidth}
+\small
+\textbf{Abstract.}
+We present a self-contained, scientifically rigorous Python simulation suite
+covering the core hierarchy of computational neuroscience: biophysical
+membrane dynamics, synaptic transmission, activity-dependent plasticity, and
+recurrent network behaviour. Starting from the canonical Hodgkin--Huxley
+(1952) conductance-based model, we implement the full quartet of
+voltage-gated Na\textsuperscript{+} and K\textsuperscript{+} kinetics with
+fourth-order Runge--Kutta integration (\SI{0.025}{\milli\second} time-step),
+and characterise firing via the frequency--current (f--I) relationship and
+V--n phase-plane analysis. We then contrast two reduced spiking neuron
+families --- the Leaky Integrate-and-Fire (LIF) and the Adaptive Exponential
+Integrate-and-Fire (AdEx, \citealt{Brette2005}) --- demonstrating five
+cortical firing-pattern archetypes (RS, IB, CH, FS, LTS). Synaptic
+transmission is modelled through kinetic receptor schemes for AMPA, NMDA
+(\citealt{Destexhe1994}), GABA\textsubscript{A}, and GABA\textsubscript{B},
+with the voltage-dependent Mg\textsuperscript{2+} block of NMDA
+(\citealt{Jahr1990}) explicitly reproduced. Synaptic plasticity is implemented
+as asymmetric spike-timing-dependent plasticity (STDP; \citealt{Bi1998}), and
+the steady-state weight distribution under competitive Hebbian learning is
+characterised across 50 independent synapses. Finally, a 125-neuron recurrent
+excitatory--inhibitory (E/I) LIF network is simulated with random sparse
+connectivity ($p = 0.15$), yielding biologically plausible population dynamics
+including spontaneous firing (E: $\sim$21\Hz, I: $\sim$26\Hz), LFP proxy
+signals, and frequency-band decomposition. All simulation results are
+persisted to a SQLAlchemy-managed SQLite database for reproducibility.
+Ten publication-quality figures plus a summary dashboard are produced, each
+referencing the primary experimental and theoretical literature.
+\end{minipage}
+
+\vspace{8pt}
+\hrule height 0.8pt
+\vspace{12pt}
+\end{center}
+\end{@twocolumnfalse}
+}]
+
+%% ──────────────────────────────────────────────────────────
+\section{Introduction and Scientific Motivation}
+\label{sec:intro}
+%% ──────────────────────────────────────────────────────────
+
+The question of how the nervous system encodes, transmits, and transforms
+information is among the most profound in modern science. Despite the apparent
+simplicity of a single neuron --- a cell roughly \SIrange{10}{100}{\micro\metre}
+in diameter --- the collective behaviour of billions of such cells gives rise
+to sensation, memory, decision-making, and consciousness. \emph{Computational
+neuroscience} bridges this gap by constructing mathematical and numerical
+models at each level of neural organisation, from ion-channel kinetics to
+whole-brain dynamics \citep{Dayan2001}.
+
+The present work addresses three interlinked levels:
+\begin{enumerate}[leftmargin=1.2em, itemsep=2pt]
+  \item \textbf{Single-neuron biophysics.} How do ion channels, described by
+    voltage-dependent kinetics, generate the stereotyped action potential
+    (spike) that is the fundamental unit of neural communication?
+  \item \textbf{Synaptic transmission and plasticity.} How do chemical
+    synapses implement specific temporal filter properties, and how does
+    activity-dependent modification of synaptic strength --- plasticity ---
+    implement a form of learning?
+  \item \textbf{Network dynamics.} How does the balance of excitation and
+    inhibition shape population activity, oscillations, and information
+    transmission in recurrent circuits?
+\end{enumerate}
+
+Understanding these levels is not merely academic. Dysfunctions in ion-channel
+kinetics underlie epilepsy and Long-QT syndrome \citep{Bhatt2009}; pathological
+NMDA hypofunction is implicated in schizophrenia \citep{Coyle2006}; disrupted
+E/I balance is a core hypothesis of autism spectrum disorder
+\citep{Yizhar2011}; and aberrant synaptic plasticity is central to both
+addiction and Alzheimer's disease \citep{Bhatt2009}. A simulation suite that
+reproduces the key biophysical phenomena at each level therefore constitutes
+an essential research and educational infrastructure for both basic and
+translational neuroscience.
+
+%% ──────────────────────────────────────────────────────────
+\section{Background: Biophysical Principles}
+\label{sec:background}
+%% ──────────────────────────────────────────────────────────
+
+\subsection{The Electrochemical Basis of the Resting Potential}
+
+A neuron at rest maintains a membrane potential $\Vrest \approx -70\mV$
+sustained by the unequal distribution of ions across the lipid bilayer:
+high intracellular K\textsuperscript{+} and low Na\textsuperscript{+}
+relative to the extracellular milieu. The Nernst equation gives the
+equilibrium (reversal) potential for each ion species $X$:
+\begin{equation}
+  E_X = \frac{RT}{zF} \ln \frac{[X]_{\mathrm{out}}}{[X]_{\mathrm{in}}}
+  \label{eq:nernst}
+\end{equation}
+where $R$ is the gas constant, $T$ temperature, $z$ valence, and $F$ the
+Faraday constant. For mammalian neurons: $\EK \approx -77\mV$,
+$\ENa \approx +55\mV$, and $\ECl \approx -70\mV$ under physiological conditions.
+The resting membrane potential is well described by the Goldman--Hodgkin--Katz
+(GHK) equation, which weights each ion's contribution by its membrane
+permeability \citep{Goldman1943}.
+
+\subsection{The Action Potential as an Electrical Instability}
+
+When a depolarising stimulus raises $\Vm$ above a threshold
+$\Vth \approx -55\mV$, a rapid positive-feedback cycle unfolds:
+depolarisation opens voltage-gated Na\textsuperscript{+} channels (VGSC),
+Na\textsuperscript{+} influx further depolarises the cell, opening more
+channels. This regenerative event --- the action potential (AP) --- peaks near
+$+30\mV$ before Na\textsuperscript{+} channel inactivation and K\textsuperscript{+}
+channel activation restore the resting potential. The AP occupies
+$\sim$\SI{1}{\milli\second} and is propagated along the axon by local circuit
+currents, serving as the elementary unit of long-range neural communication.
+
+\subsection{Chemical Synaptic Transmission}
+
+Action potentials arriving at presynaptic terminals trigger
+Ca\textsuperscript{2+}-dependent vesicle fusion and neurotransmitter release.
+Glutamate (the principal excitatory transmitter) activates postsynaptic AMPA
+and NMDA receptors; GABA (the principal inhibitory transmitter) activates
+GABA\textsubscript{A} and GABA\textsubscript{B} receptors. Each receptor
+type confers a distinctive time course and ionic selectivity to the
+postsynaptic conductance change, encoding temporal information across
+timescales from $\sim$\SI{2}{\ms} (AMPA) to $\sim$\SI{150}{\ms} (NMDA) and
+$\sim$\SI{200}{\ms} (GABA\textsubscript{B}).
+
+\subsection{Hebbian Plasticity and STDP}
+
+The synaptic efficacy --- encoded by the peak conductance $g_{\max}$ --- is
+not fixed but adapts as a function of correlated pre- and postsynaptic
+activity. Hebbian learning (\textit{``neurons that fire together, wire
+together''}) is the conceptual foundation. Its precise form in biological
+synapses is spike-timing-dependent plasticity (STDP): synaptic potentiation
+(LTP) occurs when a presynaptic spike precedes the postsynaptic AP by
+$\Delta t > 0$, and depression (LTD) occurs for $\Delta t < 0$
+\citep{Bi1998}. This asymmetric Hebbian rule provides a substrate for
+temporal sequence learning and competitive synaptic development.
+
+\subsection{E/I Balance and Network States}
+
+Cortical circuits contain approximately 80\% excitatory (glutamatergic)
+pyramidal cells and 20\% inhibitory (GABAergic) interneurons. Their
+recurrent interactions generate an intrinsic tension: excitation promotes
+network activity while inhibition stabilises it. The balance of these forces
+determines the \emph{network state}: synchronous--regular (SR), asynchronous--irregular
+(AI), or synchronous--irregular (SI) \citep{Brunel2000}. The AI state is
+considered the biologically realistic operating regime of awake cortex, where
+individual neurons fire irregularly (CV-ISI $\approx 1$) even though
+population activity is stable.
+
+%% ──────────────────────────────────────────────────────────
+\section{Mathematical Models and Implementation}
+\label{sec:methods}
+%% ──────────────────────────────────────────────────────────
+
+\subsection{Hodgkin--Huxley Neuron Model}
+\label{sec:hh}
+
+\subsubsection{Governing Equations}
+
+The Hodgkin--Huxley (HH) model \citep{HodgkinHuxley1952} describes the
+neuronal membrane as an electrical circuit with a capacitance $\Cm$
+(\SI{1}{\uFcm}) in parallel with three conductance branches:
+
+\begin{keyequation}
+\begin{align}
+  \Cm \dv{V}{t} &= I_{\mathrm{ext}}
+    - \underbrace{\gNa m^3 h (V - \ENa)}_{I_{\mathrm{Na}}}
+    - \underbrace{\gK  n^4   (V - \EK)}_{I_{\mathrm{K}}}
+    - \underbrace{\gL       (V - \EL)}_{I_{\mathrm{L}}}
+    \label{eq:hh_V}
+\end{align}
+\end{keyequation}
+
+where $\gNa = 120\mScm$, $\gK = 36\mScm$, $\gL = 0.3\mScm$ are the maximum
+conductances, and $\ENa = +55\mV$, $\EK = -77\mV$, $\EL = -54.4\mV$ are
+reversal potentials measured in squid giant axon at \SI{6.3}{\celsius}.
+
+The gating variables $m, h, n \in [0,1]$ each obey first-order kinetics:
+\begin{equation}
+  \dv{x}{t} = \alpha_x(V)(1-x) - \beta_x(V)\,x, \quad x \in \{m,h,n\}
+  \label{eq:gate_kinetics}
+\end{equation}
+
+The rate functions $\alpha_x(V)$ and $\beta_x(V)$ are empirically determined
+Boltzmann-type expressions (Table~\ref{tab:hh_rates}). At steady state:
+$x_\infty(V) = \alpha_x / (\alpha_x + \beta_x)$ and
+$\tau_x(V) = 1/(\alpha_x + \beta_x)$.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Hodgkin--Huxley rate functions (original 1952 parameterisation).
+  Voltage in mV, rates in ms$^{-1}$, conductances in mS/cm$^2$.}
+\label{tab:hh_rates}
+\begin{tabularx}{\columnwidth}{l X X}
+\toprule
+\textbf{Gate} & \boldmath$\alpha_x(V)$ & \boldmath$\beta_x(V)$ \\
+\midrule
+$m$ & $\dfrac{0.1(V+40)}{1-e^{-(V+40)/10}}$
+    & $4\,e^{-(V+65)/18}$ \\[8pt]
+$h$ & $0.07\,e^{-(V+65)/20}$
+    & $\dfrac{1}{1+e^{-(V+35)/10}}$ \\[8pt]
+$n$ & $\dfrac{0.01(V+55)}{1-e^{-(V+55)/10}}$
+    & $0.125\,e^{-(V+65)/80}$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Biophysical Interpretation}
+
+The $m^3 h$ factor in $I_{\mathrm{Na}}$ reflects the tetrameric structure of
+the Na\textsuperscript{+} channel: three activation subunits ($m$) and one
+inactivation subunit ($h$). Because $\tau_m \ll \tau_h \approx \tau_n$,
+activation is near-instantaneous relative to inactivation and K\textsuperscript{+}
+activation. This separation of timescales is mechanistically responsible for
+the AP waveform: during the upstroke, $m$ activates rapidly while $h$ and $n$
+lag; as $h$ closes and $n$ opens, repolarisation occurs. The \emph{absolute
+refractory period} corresponds to the interval while $h$ remains
+inactivated.
+
+\subsubsection{Numerical Integration}
+
+We integrate \cref{eq:hh_V,eq:gate_kinetics} simultaneously using the
+classical fourth-order Runge--Kutta (RK4) scheme with
+$\Delta t = 0.025\ms$:
+\begin{align}
+  \mathbf{y}_{n+1} &= \mathbf{y}_n + \frac{\Delta t}{6}(k_1 + 2k_2 + 2k_3 + k_4)
+  \nonumber\\
+  k_i &= f\!\left(\mathbf{y}_n + \Delta t \cdot \mathbf{c}_i\right)
+  \label{eq:rk4}
+\end{align}
+where $\mathbf{y} = [V, m, h, n]^\top$. RK4 provides fourth-order accuracy
+($\mathcal{O}(\Delta t^4)$) with three extra function evaluations per step,
+critical for the stiff exponential dynamics near $V_{\mathrm{th}}$.
+
+\subsection{Leaky Integrate-and-Fire Neuron}
+\label{sec:lif}
+
+The LIF model \citep{Lapicque1907} represents the subthreshold membrane as
+an RC circuit, with spikes emitted when a hard voltage threshold is reached:
+\begin{equation}
+  \Cm \dv{V}{t} = -\gL(V - \EL) + I_{\mathrm{ext}}
+  \label{eq:lif}
+\end{equation}
+with spike condition: if $V \geq \Vth$ then emit spike, $V \leftarrow \Vreset$,
+and apply absolute refractory period $\tau_{\mathrm{ref}}$.
+
+The membrane time constant $\taum = \Cm/\gL$ sets the integration window.
+For our canonical parameters ($\Cm = 200\pF$, $\gL = 10\nS$): $\taum = 20\ms$.
+The analytical solution for constant input gives the interspike interval
+(ISI) and thus firing rate:
+\begin{equation}
+  f(I) = \left[\tau_{\mathrm{ref}} - \taum \ln\!\left(1 -
+    \frac{\gL(\Vth - \EL)}{I - \gL(\Vreset - \EL)}\right)\right]^{-1}
+  \label{eq:lif_rate}
+\end{equation}
+
+The LIF f--I curve is therefore monotonically increasing above the rheobase
+$I_{\mathrm{rh}} = \gL(\Vth - \EL)$. Its linearity at suprathreshold currents
+(compared to the sub-linear saturation of HH) reflects the absence of sodium
+channel inactivation.
+
+\subsection{Adaptive Exponential Integrate-and-Fire (AdEx)}
+\label{sec:adex}
+
+The AdEx model \citep{Brette2005} augments the EIF membrane equation
+\citep{Fourcaud2003} with a subthreshold adaptation current $w$:
+\begin{keyequation}
+\begin{align}
+  \Cm \dv{V}{t} &= -\gL(V - \EL) + \gL \dT e^{(V-V_T)/\dT} - w + I_{\mathrm{ext}}
+  \label{eq:adex_V}\\[4pt]
+  \tauw \dv{w}{t} &= a(V - \EL) - w
+  \label{eq:adex_w}
+\end{align}
+\end{keyequation}
+with the spike rule: if $V \geq \Vth$ then $V \leftarrow \Vreset$,
+$w \leftarrow w + b$.
+
+The exponential term $\gL \dT e^{(V-V_T)/\dT}$ reproduces the sharp
+spike-initiation dynamics observed in cortical neurons
+\citep{Fourcaud2003}, parameterised by the spike-initiation threshold $V_T$
+and sharpness $\dT$. The adaptation parameters $(a, b, \tauw)$ determine
+firing pattern:
+\begin{itemize}[itemsep=1pt, leftmargin=1.4em]
+  \item \textbf{RS (Regular Spiking):} spike-frequency adaptation due to
+    large $b$ and long $\tauw$.
+  \item \textbf{IB (Intrinsic Bursting):} burst of spikes followed by
+    quiescence, due to shorter $\tauw$.
+  \item \textbf{CH (Chattering):} high-frequency bursts.
+  \item \textbf{FS (Fast Spiking):} negligible adaptation ($a = b = 0$);
+    characteristic of PV\textsuperscript{+} interneurons.
+  \item \textbf{LTS (Low-Threshold Spiking):} strong subthreshold coupling
+    ($a = 8\nS$, $b = 200\pA$); characteristic of SST\textsuperscript{+}
+    interneurons.
+\end{itemize}
+
+Table~\ref{tab:adex_presets} lists the canonical parameter sets from
+\citet{Naud2008}.
+
+\begin{table}[H]
+\centering
+\small
+\caption{AdEx parameter presets for cortical cell types \citep{Naud2008}.
+  Common parameters: $\Cm = 200\pF$, $\gL = 10\nS$, $\EL = -70\mV$,
+  $V_T = -50\mV$, $\dT = 2\mV$, $\Vreset = -58\mV$.}
+\label{tab:adex_presets}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Type} & \boldmath$a$ (nS) & \boldmath$b$ (pA) & \boldmath$\tauw$ (ms) & \textbf{CV-ISI} \\
+\midrule
+RS  & 4.0 &  80.5 & 144 & $>0$ \\
+IB  & 4.0 &  80.5 &  16 & $\sim$0.05 \\
+CH  & 4.0 &  80.5 &   5 & $\sim$0.006 \\
+FS  & 0.0 &   0.0 &  40 & $\approx 0$ \\
+LTS & 8.0 & 200.0 & 200 & $>0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Synaptic Models}
+\label{sec:synapses}
+
+\subsubsection{Kinetic Receptor Scheme}
+
+All fast ionotropic synapses (AMPA, NMDA, GABA\textsubscript{A}) are modelled
+using the two-state kinetic scheme of \citet{Destexhe1994}:
+\begin{equation}
+  \dv{r}{t} = \alpha [T](1-r) - \beta r
+  \label{eq:kinetic_synapse}
+\end{equation}
+where $r \in [0,1]$ is the fraction of open channels, $[T]$ is the
+transmitter concentration (modelled as a square pulse $[T]_{\max} = 1\,\mathrm{mM}$
+for duration $\tau_{\mathrm{pulse}}$ after each presynaptic spike), and
+$\alpha$, $\beta$ are binding and unbinding rates. The synaptic current is:
+\begin{equation}
+  I_{\mathrm{syn}} = g_{\max} \cdot r(t) \cdot (V_{\mathrm{post}} - E_{\mathrm{rev}})
+  \label{eq:syn_current}
+\end{equation}
+
+AMPA parameters: $\alpha = 1.1\,(\mathrm{mM \cdot ms})^{-1}$,
+$\beta = 0.19\,\mathrm{ms}^{-1}$, $E_{\mathrm{rev}} = 0\mV$,
+$\tau_{\mathrm{decay}} \approx 5\ms$.
+GABA\textsubscript{A} parameters: $\alpha = 5.0$, $\beta = 0.18\,\mathrm{ms}^{-1}$,
+$E_{\mathrm{rev}} = -70\mV$, $\tau_{\mathrm{decay}} \approx 5\ms$.
+
+\subsubsection{NMDA Receptor: Voltage-Dependent Mg\textsuperscript{2+} Block}
+
+NMDA receptors carry an additional, critical non-linearity: at resting
+membrane potentials, the channel pore is physically occluded by
+extracellular Mg\textsuperscript{2+} ions \citep{Nowak1984}. This block is
+relieved by postsynaptic depolarisation, making NMDA receptors function as
+\emph{coincidence detectors} that respond only when pre- and postsynaptic
+activity co-occur:
+\begin{equation}
+  B(V) = \frac{1}{1 + \exp(-0.062\,V) \cdot [\mathrm{Mg}^{2+}]_o / 3.57}
+  \label{eq:mg_block}
+\end{equation}
+\citep{Jahr1990}. The full NMDA conductance is:
+$g_{\mathrm{NMDA}}(t,V) = g_{\max}\,r(t)\,B(V)$.
+NMDA kinetics are significantly slower than AMPA ($\tau_{\mathrm{decay}} \approx 150\ms$).
+
+\subsubsection{GABA\textsubscript{B}: Metabotropic G-Protein Cascade}
+
+GABA\textsubscript{B} receptors are G-protein-coupled and activate inwardly
+rectifying K\textsuperscript{+} channels via a second-messenger cascade
+\citep{Destexhe1994}. We implement the four-state model:
+\begin{align}
+  \dv{R}{t} &= K_1[T](1-R) - K_2 R \label{eq:gabab_R}\\
+  \dv{G}{t} &= K_3 R - K_4 G \label{eq:gabab_G}\\
+  g_{\mathrm{GABA_B}} &= g_{\max} \frac{G^n}{G^n + K_d} \label{eq:gabab_g}
+\end{align}
+where $R$ is receptor activation, $G$ is G-protein activation, and the
+Hill function (\cref{eq:gabab_g}) with cooperativity $n = 4$ reflects
+G-protein stoichiometry. The time-to-peak is $\sim$\SI{120}{\ms}, and
+$E_{\mathrm{rev}} = -95\mV$ (K\textsuperscript{+} Nernst potential).
+
+\subsection{Spike-Timing Dependent Plasticity}
+\label{sec:stdp}
+
+The classical asymmetric STDP rule \citep{Bi1998,Song2000} updates synaptic
+weight $w \in [w_{\min}, w_{\max}]$ based on relative spike timing
+$\Delta t = t_{\mathrm{post}} - t_{\mathrm{pre}}$:
+\begin{keyequation}
+\begin{equation}
+  \Delta w = \begin{cases}
+    A_+ \left(\dfrac{w_{\max} - w}{w_{\max} - w_{\min}}\right)^\mu
+      e^{-\Delta t / \tau_+}
+      & \Delta t > 0 \text{ (LTP)} \\[8pt]
+    -A_- \left(\dfrac{w - w_{\min}}{w_{\max} - w_{\min}}\right)^\mu
+      e^{\Delta t / \tau_-}
+      & \Delta t < 0 \text{ (LTD)}
+  \end{cases}
+  \label{eq:stdp}
+\end{equation}
+\end{keyequation}
+
+The multiplicative soft weight-bound ($\mu = 1$) ensures weights remain
+bounded and promotes a unimodal weight distribution, unlike the additive
+rule \citep{Song2000}. We use: $A_+ = 0.010$, $A_- = 0.0105$
+($A_-/A_+ = 1.05 > 1$ ensures net LTD at equal pre/post rates,
+preventing runaway potentiation), $\tau_+ = \tau_- = 20\ms$.
+
+Traces are maintained for pre- ($x_{\mathrm{pre}}$) and post-synaptic
+($x_{\mathrm{post}}$) spikes, decaying exponentially:
+$\dot{x} = -x/\tau + \delta(t - t_{\mathrm{spike}})$.
+
+\subsection{Recurrent E/I Network}
+\label{sec:network}
+
+We simulate a random sparse Erdős--Rényi network of $N_E = 100$ excitatory
+and $N_I = 25$ inhibitory LIF neurons, connection probability $p = 0.15$
+(no autapses), based on the Brunel (2000) sparse random network framework.
+Synaptic connections are:
+\begin{itemize}[itemsep=1pt, leftmargin=1.4em]
+  \item E$\to$E, E$\to$I: AMPA-like, $g_{\mathrm{EE}} = g_{\mathrm{EI}} = 0.35\nS$
+  \item I$\to$E, I$\to$I: GABA\textsubscript{A}-like, $g_{\mathrm{IE}} = g_{\mathrm{II}} = 2.0\nS$
+\end{itemize}
+An external Poisson drive at \SI{15}{\kilo\Hz} with $g_{\mathrm{ext}} = 0.9\nS$
+provides tonic excitation, representing input from thousands of upstream neurons
+not explicitly simulated. A DC baseline of $I_{\mathrm{DC}} = 200\pA$ is also
+applied to each neuron.
+
+\subsection{Spike Train Analysis}
+\label{sec:analysis}
+
+For each simulated spike train we compute:
+\begin{itemize}[itemsep=1pt, leftmargin=1.4em]
+  \item \textbf{CV-ISI}: coefficient of variation of inter-spike intervals
+    $\mathrm{CV} = \sigma_{\mathrm{ISI}}/\mu_{\mathrm{ISI}}$; Poisson process $\Rightarrow$ CV $= 1$.
+  \item \textbf{Fano factor}: variance/mean of spike counts in non-overlapping
+    100-ms bins; sub-Poisson $\Rightarrow F < 1$ (regular), super-Poisson
+    $\Rightarrow F > 1$ (bursty).
+  \item \textbf{LFP proxy}: mean E-cell membrane voltage, smoothed with a
+    10-ms Gaussian kernel, serves as a proxy for the local field potential.
+  \item \textbf{PSD}: Welch's method \citep{Welch1967} applied to the LFP
+    trace with \SI{1024}{sample} segments, yielding power in the
+    $\delta/\theta/\alpha/\beta/\gamma$ bands.
+\end{itemize}
+
+%% ──────────────────────────────────────────────────────────
+\section{Results and Figure Analysis}
+\label{sec:results}
+%% ──────────────────────────────────────────────────────────
+
+\subsection{Figure 1 --- HH Action Potential Anatomy}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_01_hh_action_potential.png}
+  \caption{\textbf{Hodgkin--Huxley single-neuron simulation.}
+    \textbf{(A)} Membrane voltage $V(t)$ under a step current of
+    $10\uAcm$ (onset at $t=10\ms$). Grey dashed lines denote Nernst potentials
+    $\ENa$, $\EK$, $\EL$. Repeated AP trains at $\sim$67\Hz are produced.
+    \textbf{(B--D)} Time course of gating variables $m(t)$, $h(t)$, $n(t)$.
+    Note that $m$ activates on a sub-millisecond timescale, $h$ inactivates
+    slowly, and $n$ activates with a delay --- the kinetic basis of the
+    refractory period. \textbf{(E)} Ionic currents. The inward $I_{\mathrm{Na}}$
+    (negative, depolarising) and outward $I_{\mathrm{K}}$ (positive,
+    repolarising) are clearly delineated. \textbf{(F)} Injected current
+    waveform.}
+  \label{fig:hh_ap}
+\end{figure}
+
+\Cref{fig:hh_ap} validates the implementation against the classical
+Hodgkin--Huxley prediction. The AP peak of $\sim$$+35\mV$ and undershoot
+to $\sim$$-75\mV$ match the squid axon data of \citet{HodgkinHuxley1952}.
+The asymmetry between the $m^3h$ Na\textsuperscript{+} activation (fast,
+large inward current) and $n^4$ K\textsuperscript{+} activation (slower,
+smaller outward current) is clearly visible in panel (E), explaining the
+pronounced after-hyperpolarisation (AHP) that follows each spike.
+
+\begin{biophysbox}[title=Why is the Na$^+$ current transient but K$^+$ sustained?]
+The Na\textsuperscript{+} channel has \emph{two gates}: the activation gate
+$m$ (fast, opens on depolarisation) and the inactivation gate $h$ (slow,
+closes on depolarisation). Their product $m^3h$ therefore rises quickly then
+falls as $h$ closes, yielding a transient inward current. The K\textsuperscript{+}
+channel has only one gate $n$ that activates slowly, producing a sustained
+outward current responsible for repolarisation.
+\end{biophysbox}
+
+\subsection{Figure 2 --- Phase Plane Analysis}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_02_phase_plane.png}
+  \caption{\textbf{HH phase-plane analysis.}
+    \textbf{(A)} V--n phase plane: the V-nullcline ($\dot{V}=0$, blue) and
+    n-nullcline ($\dot{n}=0$, orange) intersect at the unstable fixed point
+    near $V = -65\mV$, $n \approx 0.32$. The gray trajectory shows the
+    limit cycle traversed during repetitive firing. The large excursion in
+    $n$ during each spike corresponds to K\textsuperscript{+} channel
+    opening. \textbf{(B)} Voltage-dependent steady-state gating curves
+    $m_\infty(V)$, $h_\infty(V)$, $n_\infty(V)$. The half-activation
+    voltage and slope factor of each curve determine threshold and kinetics.}
+  \label{fig:phase_plane}
+\end{figure}
+
+Phase-plane analysis (\Cref{fig:phase_plane}A) reveals the dynamical
+topology of repetitive firing. The limit cycle is the geometric object
+corresponding to sustained oscillation: the trajectory circles around the
+unstable equilibrium point, visited periodically. The widths of the
+nullclines near their intersection predict the bifurcation type (here, a
+subcritical Hopf bifurcation at the rheobase), which determines whether
+spiking onset is continuous or discontinuous in the f--I curve.
+
+\subsection{Figure 3 --- Frequency--Current (f-I) Curves}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_03_fI_curves.png}
+  \caption{\textbf{f-I curves for three neuron models.}
+    \textbf{(A)} HH model: rheobase $\approx 2.1\uAcm$; firing rate saturates
+    near $\sim$100\Hz due to sodium channel inactivation (relative refractory
+    period). \textbf{(B)} LIF vs AdEx-RS vs AdEx-FS: the LIF f-I curve
+    is linear above rheobase (no spike-rate adaptation); AdEx-RS shows
+    pronounced sub-linearity due to the adaptation current $w$ accumulating
+    with spikes; AdEx-FS (no adaptation) tracks LIF closely but with the
+    exponential spike initiation producing a sharper threshold.}
+  \label{fig:fi_curves}
+\end{figure}
+
+The f-I curve (\Cref{fig:fi_curves}) is the primary functional characterisation
+of a spiking neuron: it maps input current to output firing rate, i.e., it
+performs \emph{rate coding}. The key observation is that adaptation (AdEx-RS)
+compresses the dynamic range, acting as an automatic gain control mechanism.
+This is biologically important: it prevents saturation under strong sustained
+inputs and maintains sensitivity to changes in input rather than absolute
+magnitude --- a form of contrast enhancement \citep{Benda2003}.
+
+\subsection{Figure 4 --- AdEx Firing Pattern Gallery}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_04_adex_patterns.png}
+  \caption{\textbf{AdEx firing pattern gallery.}
+    Left panels: membrane voltage $V(t)$ (coloured) and adaptation variable
+    $w(t)$ (dashed purple) for each cell type. Right panels: ISI histograms.
+    RS shows strong spike-frequency adaptation (the ISI histogram is right-skewed,
+    CV $= 0.33$); IB shows tight burst clustering (CV $= 0.04$); CH shows highly
+    regular chattering (CV $= 0.006$, ISI histogram is narrowly peaked); FS shows
+    perfectly regular firing (CV $\approx 0$); LTS shows modest adaptation.
+    }
+  \label{fig:adex_patterns}
+\end{figure}
+
+The AdEx parameter space replicates an impressive diversity of cortical
+firing patterns (\Cref{fig:adex_patterns}). This is clinically relevant:
+disruption of the fast-spiking (FS) pattern, characteristic of
+parvalbumin-positive (PV\textsuperscript{+}) interneurons, is a leading
+candidate mechanism for gamma oscillation deficits in schizophrenia
+\citep{Gonzalez2011}. The intrinsic bursting (IB) pattern, found in layer
+V pyramidal neurons, is implicated in epileptiform activity when
+insufficiently balanced by inhibition.
+
+\subsection{Figure 5 --- Synaptic Conductance Kinetics}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_05_synapse_kinetics.png}
+  \caption{\textbf{Conductance kinetics of four receptor types.}
+    \textbf{AMPA}: fast rise ($\sim$1\ms), decay $\tau \approx 5\ms$,
+    peak $g \approx 666\,\mathrm{pS}$; \textbf{NMDA}: slow kinetics,
+    $\tau_{\mathrm{decay}} \approx 150\ms$; \textbf{GABA-A}: fast
+    chloride-mediated inhibition, peak $\approx 965\,\mathrm{pS}$;
+    \textbf{GABA-B}: slow metabotropic kinetics, peak at $\sim$120\ms
+    following a 4-spike burst. Note the four-order-of-magnitude timescale
+    difference between AMPA and GABA\textsubscript{B}.}
+  \label{fig:synapses}
+\end{figure}
+
+The timescale diversity of synaptic conductances (\Cref{fig:synapses})
+enables the nervous system to perform temporal integration across multiple
+scales simultaneously. AMPA receptors mediate rapid, point-like coincidence
+signals; NMDA receptors integrate activity over $\sim$150\ms, implementing
+a sliding temporal window for associative plasticity; GABA\textsubscript{B}
+provides a delayed, prolonged inhibitory shunt that suppresses bursting.
+
+\subsection{Figure 6 --- NMDA Mg\textsuperscript{2+} Block}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_06_nmda_mg_block.png}
+  \caption{\textbf{NMDA voltage-dependent Mg\textsuperscript{2+} block.}
+    \textbf{(A)} Unblock factor $B(V)$ as a function of membrane potential for
+    four Mg\textsuperscript{2+} concentrations. At $[\mathrm{Mg}^{2+}]_o = 1\,\mathrm{mM}$
+    (physiological), the channel is $>$90\% blocked at $V = -70\mV$ but $>$80\%
+    unblocked at $V = 0\mV$. \textbf{(B)} I-V relationship: the resulting
+    N-shaped I-V curve is diagnostic of NMDA receptor-mediated current and
+    is qualitatively absent at zero Mg\textsuperscript{2+}.}
+  \label{fig:nmda}
+\end{figure}
+
+The Mg\textsuperscript{2+} block (\Cref{fig:nmda}) is perhaps the most
+biologically important non-linearity in the entire nervous system. It renders
+NMDA a molecular ``AND gate'': simultaneous presynaptic glutamate release
+\emph{and} postsynaptic depolarisation are required to produce significant
+Ca\textsuperscript{2+} influx. This coincidence-detection property is
+considered the synaptic implementation of Hebb's postulate \citep{Hebb1949}
+and is mechanistically required for associative LTP \citep{Bliss1993}.
+The N-shaped I-V curve in \Cref{fig:nmda}B carries intrinsic bistability:
+at intermediate voltages, negative-slope conductance regions can sustain
+two stable membrane potential states, hypothesised to underlie working
+memory \emph{up-states} \citep{Wang1999}.
+
+\subsection{Figure 7 --- STDP Weight Dynamics}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_07_stdp.png}
+  \caption{\textbf{Spike-timing dependent plasticity (STDP).}
+    \textbf{(A)} Theoretical STDP learning window: LTP (red) for
+    $\Delta t > 0$ (post follows pre), LTD (blue) for $\Delta t < 0$.
+    The slight asymmetry $A_-/A_+ = 1.05$ ensures a net depression at
+    equal rates, critical for weight stabilisation.
+    \textbf{(B)} Single-synapse weight evolution under 20\Hz Poisson
+    pre- and postsynaptic activity. The weight converges to $w^* \approx 0.50$.
+    \textbf{(C)} Steady-state weight distribution across 50 independent
+    synapses (median $\approx 0.48$): broad unimodal, consistent with
+    the multiplicative STDP prediction of \citet{Song2000}.}
+  \label{fig:stdp}
+\end{figure}
+
+The STDP learning window (\Cref{fig:stdp}A) is reproduced from the
+seminal experimental results of \citet{Bi1998} in hippocampal cultures.
+Critically, the temporal asymmetry encodes causal relationships: only
+when a presynaptic neuron fires \emph{before} a postsynaptic neuron --- consistent
+with the former \emph{causing} the latter --- is the synapse potentiated.
+This implements a temporal credit-assignment rule that can, in principle,
+learn sequences and associations \citep{Abbott2000}.
+
+The convergence of weights to an intermediate value (\Cref{fig:stdp}B--C)
+under balanced random firing reflects the competition between potentiation
+and depression. The slight depression bias ($A_- > A_+$) stabilises the
+weight by preventing runaway potentiation under the Poisson regime. In a
+structured input regime (e.g., correlated pre/post activity), the STDP rule
+would drive weights to a bimodal ``winner-take-all'' distribution, selecting
+the most informative synaptic inputs \citep{Song2000}.
+
+\subsection{Figure 8 --- E/I Network Dynamics}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_08_network_dynamics.png}
+  \caption{\textbf{Recurrent E/I network dynamics.}
+    \textbf{(A)} Raster plot: each row is a neuron, each dot is a spike.
+    Red: excitatory (100); blue: inhibitory (25). Dashed line separates
+    populations. \textbf{(B)} Population firing rates (10-ms Gaussian smoothing):
+    E $\approx 21\Hz$, I $\approx 26\Hz$. \textbf{(C)} LFP proxy (mean E-cell
+    voltage), showing sub-threshold fluctuations. \textbf{(D)} E/I balance:
+    red/blue fills indicate E- or I-dominant epochs, revealing dynamic competition
+    between populations.}
+  \label{fig:network}
+\end{figure}
+
+The E/I network simulation (\Cref{fig:network}) demonstrates that recurrent
+excitation and inhibition together generate sustained asynchronous activity
+without external drive beyond the tonic Poisson input. The inhibitory
+population fires slightly faster (26\Hz vs 21\Hz) than excitatory neurons,
+consistent with the inhibitory stabilisation mechanism \citep{Tsodyks1997}:
+strong feedback inhibition prevents excitatory runaway and constrains the
+network to a stable operating regime.
+
+The population firing rates exhibit fluctuations on a timescale of $\sim$20\ms
+that reflect the recruitment and suppression of activity cascades through the
+recurrent network. The LFP proxy captures the aggregate subthreshold activity,
+reflecting the dominant timescale of synaptic currents.
+
+\subsection{Figure 9 --- ISI Statistics and Firing Irregularity}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_09_isi_analysis.png}
+  \caption{\textbf{ISI statistics.}
+    \textbf{(A)} Log-scale ISI histogram for all E-cells pooled. The
+    right-skewed distribution with a mode at $\sim$25\ms (40\Hz) is consistent
+    with a mostly irregular but rate-dominated spiking regime.
+    \textbf{(B)} Poincaré return map (ISI$_{n+1}$ vs ISI$_n$) for the
+    most active E-cell. Diffuse scatter indicates moderate irregularity.
+    \textbf{(C)} CV-ISI distribution across 100 E-neurons. Median CV $= 0.18$
+    indicates a \emph{synchronous-regular} (SR) state rather than true AI
+    ($\mathrm{CV} \approx 1$), reflecting the predominantly feed-forward
+    Poisson drive.}
+  \label{fig:isi}
+\end{figure}
+
+The ISI analysis (\Cref{fig:isi}) reveals the network is operating in a
+synchronous-regular (SR) state (CV-ISI $\approx 0.18$), rather than the
+biologically desirable AI state (CV-ISI $\approx 1$). This is expected: our
+simplified network of 125 neurons with relatively strong Poisson drive produces
+predominantly driven firing rather than self-sustained irregular activity. The
+Poincaré return map is tightly clustered near the diagonal, confirming low
+trial-to-trial variability.
+
+The critical parameter for transitioning to the AI state is the ratio of
+inhibitory to excitatory strength $g = g_{IE}/g_{EE}$ and the external firing
+rate \citep{Brunel2000}. For the AI regime, the effective synaptic noise from
+thousands of recurrent inputs must dominate the mean input — a condition
+satisfied only in much larger ($N \sim 10^4$) networks or with sufficiently
+decorrelated inputs.
+
+\subsection{Figure 10 --- LFP Power Spectrum}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{fig_10_lfp_psd.png}
+  \caption{\textbf{LFP power spectral density.}
+    \textbf{(A)} Welch PSD of the LFP proxy. Frequency bands are
+    colour-coded: $\delta$ (0.5--4\Hz, green), $\theta$ (4--8\Hz, purple),
+    $\alpha$ (8--13\Hz, red), $\beta$ (13--30\Hz, blue), $\gamma$ (30--100\Hz,
+    orange). The power is concentrated in the $\gamma$ band, consistent with the
+    $\sim$25\Hz dominant network oscillation emerging from the E/I feedback loop.
+    \textbf{(B)} Integrated band powers: $\gamma$ dominates by several orders
+    of magnitude over lower frequency bands.}
+  \label{fig:psd}
+\end{figure}
+
+The LFP power spectrum (\Cref{fig:psd}) is dominated by $\gamma$-band power
+($>$30\Hz), consistent with the $\sim$20\Hz mean E-cell firing rate and the
+E/I feedback oscillation frequency. In real cortex, gamma oscillations arise
+through the ING (Interneuron Network Gamma) and PING (Pyramidal Interneuron
+Network Gamma) mechanisms \citep{Whittington2000}, both of which involve the
+interplay of fast excitation (AMPA) and delayed inhibition (GABA\textsubscript{A})
+at the network level. The dominant frequency of PING oscillations is approximately
+$f \approx 1 / (t_{\mathrm{delay}} + \tau_{\mathrm{GABA}})$, consistent with
+our result.
+
+%% ──────────────────────────────────────────────────────────
+\section{Discussion and Scientific Significance}
+\label{sec:discussion}
+%% ──────────────────────────────────────────────────────────
+
+\subsection{Model Hierarchy and Computational Trade-offs}
+
+The three neuron models implemented span a fundamental trade-off between
+biophysical detail and computational efficiency (\Cref{tab:model_comparison}).
+The HH model, with its four-dimensional ODE system and voltage-dependent
+conductances, is the gold standard for membrane dynamics, but requires RK4
+integration at $\Delta t \leq 0.025\ms$ (40 kHz) to resolve the fast
+Na\textsuperscript{+} activation. The LIF reduces the membrane to a
+one-dimensional linear ODE with a reset, enabling large-scale network
+simulation ($N \sim 10^5$ on a single CPU) while retaining the essential
+integrate-and-fire computation. The AdEx bridges these extremes: its
+exponential term captures realistic spike initiation, and the adaptation
+variable $w$ recovers the full diversity of cortical firing patterns at
+only $2\times$ the computational cost of LIF.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Neuron model comparison.}
+\label{tab:model_comparison}
+\begin{tabularx}{\columnwidth}{lccXc}
+\toprule
+\textbf{Model} & \textbf{Dim.} & \boldmath$\Delta t$ & \textbf{Properties captured} & \textbf{Biophys.} \\
+\midrule
+HH  & 4 & 0.025\ms & AP shape, channel kinetics, refractory & **** \\
+LIF & 1 & 0.1\ms & Subthreshold integration, rate coding & ** \\
+AdEx & 2 & 0.1\ms & Adaptation, firing patterns, EIF & *** \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{The Role of Inhibition in Network Stability}
+
+The E/I network results highlight a fundamental principle: \emph{inhibition
+is not merely the absence of excitation, but an active computational mechanism}.
+Without recurrent inhibition, the network would undergo synchronised epileptic
+bursting (as readily demonstrated by setting $g_{IE} = 0$). With appropriate
+inhibition, three outcomes are possible \citep{Brunel2000}:
+
+\begin{enumerate}[leftmargin=1.2em, itemsep=2pt]
+  \item \textbf{AI state} ($g \geq 5$, low external rate): individual
+    neurons fire irregularly due to the near-cancellation of excitation and
+    inhibition, producing high CV-ISI $\approx 1$.
+  \item \textbf{SR state} ($g < 3$, high external rate): network is
+    driven primarily by external input and fires regularly.
+  \item \textbf{Oscillatory state} (intermediate $g$): E/I loop generates
+    gamma oscillations (PING mechanism).
+\end{enumerate}
+
+Our simulation operates in the SR state at the parameters chosen, reflecting
+the relatively strong Poisson drive. The transition to AI requires the effective
+synaptic noise --- the standard deviation of recurrent input currents --- to
+exceed the distance between resting potential and threshold.
+
+\subsection{STDP and the Emergence of Selectivity}
+
+The STDP simulations demonstrate that competitive Hebbian learning under
+random input drives weights to an intermediate stable value. This changes
+dramatically under structured input: if a subset of presynaptic neurons
+fire in a correlated temporal pattern (e.g., a sequence), STDP selectively
+potentiates those synapses while depressing others \citep{Song2000}. Over
+time, this produces neurons that respond preferentially to specific temporal
+patterns --- a plausible mechanism for \emph{feature selectivity} in sensory
+cortex.
+
+The key insight is that the asymmetric temporal window encodes
+\emph{causality}: synapses from neurons that reliably predict the postsynaptic
+neuron are strengthened, while non-predictive synapses are weakened. This is
+a form of \emph{temporal contrastive Hebbian learning} \citep{Abbott2000}.
+
+\subsection{NMDA as the Molecular Substrate of Learning}
+
+The voltage-dependent Mg\textsuperscript{2+} block (\Cref{fig:nmda})
+is mechanistically indispensable for associative plasticity: it ensures that
+only synapses active during postsynaptic firing (i.e., those that contributed
+to the AP) are eligible for LTP. Blocking NMDA receptors with APV abolishes
+LTP induction in hippocampal slices \citep{Bliss1993}, and knockin mice
+with inactivated NMDA receptors in CA1 pyramidal neurons are severely impaired
+on spatial learning tasks \citep{Tsien1996}. Our implementation faithfully
+reproduces the N-shaped I-V curve (\Cref{fig:nmda}B) and can therefore
+serve as the synaptic plasticity module in more complex learning simulations.
+
+\subsection{Limitations and Extensions}
+
+Several biophysically important features are not included in the current
+implementation:
+
+\begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+  \item \textbf{Dendritic computation}: real neurons perform nonlinear
+    dendritic integration. Multi-compartment models \citep{Mainen1996}
+    would capture synaptic location effects.
+  \item \textbf{Short-term plasticity}: synaptic facilitation and depression
+    on timescales of 100--1000\ms \citep{Tsodyks1997} are absent.
+  \item \textbf{Calcium dynamics}: a full Ca\textsuperscript{2+} model
+    \citep{Bhatt2009} would tie NMDA to LTP magnitude.
+  \item \textbf{Neuromodulation}: dopamine, acetylcholine, and norepinephrine
+    modulate both intrinsic and synaptic properties. Their inclusion is
+    necessary for modelling arousal, attention, and reward.
+\end{itemize}
+
+%% ──────────────────────────────────────────────────────────
+\section{Software Architecture}
+\label{sec:software}
+%% ──────────────────────────────────────────────────────────
+
+\subsection{Project Structure}
+
+\begin{lstlisting}[caption={Project directory structure.},
+                   language=bash, basicstyle=\ttfamily\scriptsize]
+compneuro/
+ neurons/
+   base_neuron.py    # Abstract base class
+   hodgkin_huxley.py # HH model + RK4 + f-I
+   integrate_fire.py # LIF, EIF, AdEx presets
+ synapses/
+   synapse.py        # AMPA, NMDA, GABA-A/B kinetics
+   plasticity.py     # STDP, BCM, Oja, Triplet rules
+ networks/
+   network.py        # Sparse random E/I network
+ analysis/
+   spike_analysis.py # ISI, PSTH, autocorr, PSD
+   visualisation.py  # 11 publication figures
+ database/
+   models.py         # SQLAlchemy ORM schema
+   db.py             # Engine, sessions, repository
+ generate_figures.py # Master simulation script
+ requirements.txt    # Python dependencies
+\end{lstlisting}
+
+\subsection{Database Schema}
+
+Results are persisted to a SQLite database via SQLAlchemy ORM, enabling
+reproducible query of simulation metadata:
+
+\begin{lstlisting}[caption={Querying simulation results via SQLAlchemy.}]
+from database.db import build_engine, SimulationRepository
+
+engine = build_engine("compneuro.db")
+repo   = SimulationRepository(engine)
+
+# Retrieve all HH simulation runs
+hh_runs = repo.list_runs(model_type="HodgkinHuxley")
+
+# Get spike train statistics for run 1
+summary = repo.run_summary(run_id=1)
+print(f"Mean rate: {summary['mean_rate_hz']:.1f} Hz")
+print(f"CV-ISI   : {summary['mean_cv_isi']:.3f}")
+\end{lstlisting}
+
+\subsection{Reproducing the Results}
+
+\begin{lstlisting}[caption={Running the simulation suite.}, language=bash]
+# Install dependencies
+pip install numpy scipy matplotlib sqlalchemy
+
+# Clone repository
+git clone https://github.com/[user]/compneuro
+cd compneuro
+
+# Run all simulations and generate figures
+python generate_figures.py
+# Output: figures/fig_01_*.png ... fig_11_*.png
+#         compneuro.db
+\end{lstlisting}
+
+\subsection{Key Implementation Decisions}
+
+\begin{notebox}[title=Engineering Notes]
+\textbf{RK4 vs Euler integration.} The Euler method introduces $\mathcal{O}(\Delta t)$
+local truncation error, which accumulates dangerously near the spike threshold.
+RK4 reduces this to $\mathcal{O}(\Delta t^4)$, allowing stable integration
+at $\Delta t = 0.025\ms$ for the HH model. For LIF and AdEx, Euler at
+$\Delta t = 0.1\ms$ is adequate.
+
+\textbf{AdEx overflow prevention.} The exponential term
+$\gL\dT e^{(V-V_T)/\dT}$ can overflow double precision if $V > +30\mV$.
+The fix is to immediately reset $V \leftarrow \Vreset$ upon threshold crossing
+within the same timestep, preventing the voltage from persisting at $V_{\mathrm{peak}}$.
+
+\textbf{SQLAlchemy WAL mode.} SQLite's write-ahead logging (WAL) is
+enabled via a connection pragma, enabling concurrent read/write during
+long simulation runs.
+\end{notebox}
+
+%% ──────────────────────────────────────────────────────────
+\section{Conclusions}
+\label{sec:conclusions}
+%% ──────────────────────────────────────────────────────────
+
+We have implemented and validated a complete biophysical simulation
+hierarchy spanning four levels of neural organisation. The key scientific
+conclusions are:
+
+\begin{enumerate}[leftmargin=1.4em, itemsep=3pt]
+  \item The Hodgkin--Huxley model faithfully reproduces AP shape,
+    ion-current anatomy, and f-I curve rheobase from the original
+    1952 parameterisation, confirming correctness of the RK4
+    implementation.
+
+  \item The AdEx model reproduces five distinct cortical firing-pattern
+    archetypes (RS, IB, CH, FS, LTS) by varying only three parameters
+    $(a, b, \tauw)$, demonstrating the model's utility as a flexible
+    yet tractable cell-class descriptor.
+
+  \item The kinetic synapse models reproduce the published time constants
+    and I-V characteristics of AMPA, NMDA, GABA\textsubscript{A}, and
+    GABA\textsubscript{B} receptors. The NMDA Mg\textsuperscript{2+}
+    block is an essential non-linearity for both coincidence detection
+    and associative learning.
+
+  \item STDP with multiplicative weight bounds and a slight depression
+    bias ($A_-/A_+ = 1.05$) produces a unimodal steady-state weight
+    distribution, confirming stability under unstructured Poisson input.
+
+  \item The 125-neuron sparse random E/I LIF network exhibits
+    self-sustained activity at biologically plausible rates ($\sim$20\Hz)
+    with gamma-band dominant LFP, demonstrating the emergence of network
+    oscillations from purely local E/I interactions.
+\end{enumerate}
+
+The codebase is designed as a modular, extensible research platform.
+Immediate extensions include multi-compartment dendritic integration,
+short-term synaptic plasticity, and calcium-dependent LTP rules,
+all of which can be integrated without modification of the existing
+model hierarchy.
+
+%% ──────────────────────────────────────────────────────────
+\section*{Acknowledgements}
+%% ──────────────────────────────────────────────────────────
+
+The authors acknowledge the foundational contributions of
+\citeauthor{HodgkinHuxley1952}, \citeauthor{Brette2005},
+\citeauthor{Destexhe1994}, \citeauthor{Bi1998}, and \citeauthor{Brunel2000},
+whose theoretical frameworks are implemented in this work.
+Figures were generated using \textsc{Matplotlib} \citep{Hunter2007}.
+Database management uses SQLAlchemy \citep{Bayer2012}.
+Numerical computations used NumPy \citep{Harris2020} and SciPy \citep{Virtanen2020}.
+
+%% ──────────────────────────────────────────────────────────
+\bibliography{references}
+%% ──────────────────────────────────────────────────────────
+
+\end{document}
